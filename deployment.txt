@@ -1,0 +1,35 @@
+# Activas las siguientes APIs:
+
+* Cloud Run Admin API
+* Compute Engine API
+* Cloud Build API
+* Artifact Registry API
+* Container Scanning API
+* Cloud Storage API
+* Firestore API
+
+# Crear ambiente virtual
+
+C:\Users\IOR_C\AppData\Local\Programs\Python\Python313\python.exe -m venv .venv
+C:\Users\IOR_C\OneDrive\Documentos\GitHub\vertex-ai-creative-studio\.venv\Scripts\Activate.ps1
+
+# Login y seteo del proyecto
+gcloud auth application-default login
+gcloud config set project creative-studio-1
+
+# Variables de ambiente
+$env:REGION = "us-central1"
+$env:PROJECT_ID = "creative-studio-1"
+$env:INITIAL_USER = "irad.olivares@gmail.com"
+
+# Crear archivo terraform.tfvars
+@"
+project_id = "$env:PROJECT_ID"
+initial_user = "$env:INITIAL_USER"
+use_lb = false
+"@ | Set-Content terraform.tfvars
+
+C:\terraform_1.14.3_windows_386\terraform.exe init
+C:\terraform_1.14.3_windows_386\terraform.exe apply
+
+# Constuir y desplegar contenedor

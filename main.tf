@@ -68,7 +68,7 @@ module "project-services" {
 resource "null_resource" "sleep" {
   depends_on = [module.project-services.project_id]
   provisioner "local-exec" {
-    command = "sleep ${var.sleep_time}"
+    command = "powershell -Command Start-Sleep -Seconds ${var.sleep_time}"
   }
 }
 
@@ -76,7 +76,7 @@ resource "null_resource" "sleep" {
 *  Network Infra Resources Section
 *********************************************/
 
-/* There are times when IAP service account is not automatically provisioned, creating explicitly to be sure */
+/* IAP resources disabled - IAP requires an organization
 resource "google_project_service_identity" "iap_sa" {
   provider = google-beta
   project  = var.project_id
@@ -96,6 +96,7 @@ resource "google_cloud_run_service_iam_member" "iap_cloudrun_access" {
   role     = "roles/run.invoker"
   member   = google_project_service_identity.iap_sa.member
 }
+*/
 
 module "lb-http" {
   count                           = var.use_lb ? 1 : 0
@@ -146,6 +147,14 @@ resource "google_service_account" "creative_studio" {
   account_id = "service-creative-studio"
 }
 
+# Allow public access to Cloud Run service when IAP is disabled
+resource "google_cloud_run_service_iam_member" "public_access" {
+  location = var.region
+  service  = google_cloud_run_v2_service.creative_studio.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
 # Centralizing environment variables here and using for each in service declaration for simplicity
 locals {
   asset_bucket_name = "creative-studio-${var.project_id}-assets"
@@ -179,8 +188,8 @@ resource "google_cloud_run_v2_service" "creative_studio" {
   ingress              = var.use_lb ? "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" : "INGRESS_TRAFFIC_ALL"
   default_uri_disabled = var.use_lb
   deletion_protection  = false
-  iap_enabled          = !var.use_lb
-  invoker_iam_disabled = !var.use_lb
+  iap_enabled          = false  # Deshabilitado porque IAP requiere una organización
+  invoker_iam_disabled = false  # Habilitado para permitir acceso sin IAP
   launch_stage         = var.use_lb ? "GA" : "BETA"
 
   template {
